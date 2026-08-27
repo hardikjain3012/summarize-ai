@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: summarize-ai
+
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info

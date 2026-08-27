@@ -1,0 +1,5 @@
+SummarizeAI is an AI-powered RAG application.
+
+It allows users to upload documents and ask questions about those documents.
+
+The system converts documents into embeddings and stores them in a PostgreSQL database using PGVector.
