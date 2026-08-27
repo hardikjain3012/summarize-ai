@@ -1,5 +1,179 @@
-SummarizeAI is an AI-powered RAG application.
+SUMMARIZEAI TEST DOCUMENT
 
-It allows users to upload documents and ask questions about those documents.
+Introduction
 
-The system converts documents into embeddings and stores them in a PostgreSQL database using PGVector.
+SummarizeAI is an application designed to help users understand and interact with large amounts of text. A user can upload one or more documents and ask questions in natural language. Instead of manually reading an entire document to find a specific piece of information, the user can ask a question and receive an answer based on the relevant parts of the uploaded content.
+
+The initial version of SummarizeAI supports text files. A user uploads a TXT file through a user interface. The backend receives the file, validates it, reads its content, and prepares the content for processing. Future versions may support PDF files, Word documents, web pages, and other document formats.
+
+Document Processing
+
+When a document is uploaded, the system should not necessarily treat the entire document as a single piece of information. Large documents can contain many different topics. Creating one embedding for an entire document can make semantic retrieval less accurate because the embedding represents the overall meaning of all the content together.
+
+For this reason, SummarizeAI divides documents into smaller chunks. Each chunk contains a limited amount of text and represents a smaller unit of meaning. For example, a document containing information about software architecture, databases, cloud infrastructure, and artificial intelligence may be divided into multiple chunks.
+
+Chunking allows the retrieval system to identify the specific sections of a document that are most relevant to a user's question. Instead of passing an entire document to an AI model, the application can retrieve only the most relevant chunks.
+
+Chunk Size
+
+Choosing the correct chunk size is an important design decision. Very small chunks can lose important context. A sentence may depend on information from the previous sentence, and splitting them too aggressively can reduce the quality of retrieval.
+
+Very large chunks have a different problem. A large chunk may contain several unrelated ideas. Its embedding therefore represents multiple concepts at the same time, which can make similarity search less precise.
+
+The initial implementation of SummarizeAI uses a token-based text splitter. A target chunk size of approximately 800 tokens is used as a starting configuration. This value can be changed later after evaluating the quality of search results.
+
+Embedding Generation
+
+After a document has been divided into chunks, the application generates an embedding for each chunk. An embedding is a numerical representation of the semantic meaning of text.
+
+Two pieces of text can use different words while having similar meanings. For example, the sentences "How do I reset my account password?" and "I forgot my password and need to change it" contain similar intentions despite using different words.
+
+Embedding models attempt to place semantically similar pieces of text close to each other in a high-dimensional vector space. The exact vector contains many numerical values and is not intended to be interpreted directly by a human.
+
+SummarizeAI uses an OpenAI embedding model to generate these vectors. The Spring AI integration communicates with the embedding model through an API. The application sends text chunks to the embedding model and receives the corresponding vectors.
+
+Vector Storage
+
+The generated embeddings need to be stored in a database that supports vector operations. SummarizeAI uses PostgreSQL with the PGVector extension.
+
+PGVector allows vectors to be stored in PostgreSQL columns and supports similarity searches between vectors. This allows the application to compare a query embedding with embeddings generated from uploaded document chunks.
+
+Each stored record can contain the chunk content, its embedding, and metadata. Metadata can later include information such as the original file name, document identifier, upload timestamp, chunk number, and document type.
+
+For the initial version, Spring AI manages interactions with the vector store. The application creates Document objects and passes them to the VectorStore. The VectorStore generates embeddings and stores the documents and vectors in PostgreSQL.
+
+Query Processing
+
+A user can ask a question in plain English. For example, a user might ask, "Why does SummarizeAI split documents into chunks?"
+
+The application converts the user's question into an embedding using the same embedding model used for document chunks. This is important because vectors must exist in the same semantic space for similarity comparison.
+
+The query embedding is compared against embeddings stored in PGVector. The database returns the chunks that are most similar to the user's question.
+
+The application might retrieve three, five, or another configurable number of relevant chunks. The exact number should be tuned based on the quality of the final answers and the amount of context supported by the AI model.
+
+Retrieval Augmented Generation
+
+SummarizeAI follows the Retrieval Augmented Generation, or RAG, architecture.
+
+RAG combines information retrieval with a generative AI model. The system first searches for relevant information and then provides that information to a language model as context.
+
+The process can be described as follows.
+
+First, a user uploads a document.
+
+Second, the application reads the document.
+
+Third, the application divides the document into chunks.
+
+Fourth, an embedding is generated for every chunk.
+
+Fifth, the chunks and embeddings are stored in PGVector.
+
+Later, a user asks a question.
+
+The application generates an embedding for the question.
+
+PGVector performs a similarity search.
+
+The most relevant document chunks are returned.
+
+Those chunks are combined with the user's question.
+
+Finally, the combined context is sent to a language model, which generates an answer.
+
+The language model should ideally answer based primarily on the retrieved context. If the relevant information is not present in the uploaded documents, the system should indicate that it does not have enough information rather than inventing an answer.
+
+Summarization
+
+The generative model used by SummarizeAI can perform several tasks. One important task is answering questions about uploaded documents.
+
+Another task is generating summaries. A user may upload a long document and request a short summary, a detailed summary, a list of key points, or an explanation suitable for a specific audience.
+
+For example, a technical document could be summarized for a software engineer, while the same content could be explained in simpler language for a non-technical user.
+
+The initial architecture plans to use a Claude model for answer generation and summarization. OpenAI and Claude therefore have separate responsibilities in the application.
+
+OpenAI is used for embedding generation.
+
+Claude is intended to be used for generating natural language responses.
+
+This separation allows the application to select models based on their specific strengths and can also make it easier to replace one provider without changing the entire architecture.
+
+Spring Boot Architecture
+
+The backend of SummarizeAI is built using Java and Spring Boot. Spring Boot provides the foundation for REST APIs, dependency injection, configuration management, validation, and production features.
+
+A document upload controller receives requests from the client. The controller should remain relatively small and delegate business logic to a service.
+
+A document service processes uploaded files. It reads the file content, creates document objects, applies chunking, attaches metadata, and sends the resulting chunks to the vector store.
+
+A future query controller will receive user questions. A RAG service will coordinate the retrieval process by searching the vector store and sending relevant chunks to the language model.
+
+This separation makes the application easier to maintain and test.
+
+Metadata
+
+Metadata becomes increasingly important when multiple documents are stored in the same vector database.
+
+Imagine that one user uploads a document about artificial intelligence and another user uploads a document about cloud infrastructure. Without metadata or filtering, a question about cloud infrastructure could potentially search across every stored document.
+
+In a real multi-user application, each document should have a unique identifier. Chunks should contain metadata linking them back to the original document.
+
+For example, metadata might contain a document identifier such as document-12345, the original filename, and a chunk number.
+
+When performing a similarity search, the application can later filter results based on document identifiers, user identifiers, or other access controls.
+
+This prevents unrelated documents from influencing answers and is also important for data isolation and security.
+
+Future Improvements
+
+The initial version of SummarizeAI focuses on proving the complete RAG pipeline locally.
+
+The first milestone is successful TXT file upload.
+
+The second milestone is reading the file and creating chunks.
+
+The third milestone is generating embeddings using OpenAI.
+
+The fourth milestone is storing those embeddings in PostgreSQL with PGVector.
+
+The fifth milestone is accepting a natural language query and performing semantic similarity search.
+
+The sixth milestone is passing relevant chunks to Claude and generating an answer.
+
+After the basic pipeline works, several improvements can be considered.
+
+The application can support additional file types.
+
+It can add authentication and user accounts.
+
+It can store document metadata in relational tables.
+
+It can allow users to delete previously uploaded documents.
+
+It can prevent duplicate document uploads.
+
+It can show users the source chunks used to generate an answer.
+
+It can support streaming responses from the AI model.
+
+It can add asynchronous processing for large files.
+
+It can monitor API latency and embedding costs.
+
+It can introduce better chunking strategies for different document formats.
+
+It can support hybrid search by combining vector similarity with traditional keyword search.
+
+It can add reranking, where an additional model evaluates the retrieved chunks before they are sent to the language model.
+
+Conclusion
+
+SummarizeAI is built around a simple but powerful idea: users should be able to upload information and interact with it using natural language.
+
+The core architecture consists of document ingestion, chunking, embedding generation, vector storage, semantic retrieval, and AI-powered response generation.
+
+The application currently has the foundation required for the first stages of this architecture. Spring Boot handles the backend application. PostgreSQL and PGVector provide persistent vector storage. Spring AI connects the application to AI models. OpenAI generates embeddings.
+
+The next major step is to verify that large documents are successfully divided into multiple chunks and stored as separate vector records. After that, SummarizeAI can implement semantic search and eventually connect the retrieved context to Claude for generating answers.

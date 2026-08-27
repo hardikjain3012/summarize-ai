@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -16,8 +17,8 @@ public class DocumentController {
     @PostMapping("/upload")
     public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) {
 
-        documentService.process(file);
+        UUID documentId = documentService.process(file);
 
-        return ResponseEntity.ok("Document uploaded successfully");
+        return ResponseEntity.ok("Document uploaded successfully. Document ID: " + documentId);
     }
 }
