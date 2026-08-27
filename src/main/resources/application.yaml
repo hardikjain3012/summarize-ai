@@ -22,6 +22,11 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        model: claude-sonnet-4-5
+        max-tokens: 2000
 
     vectorstore:
       pgvector:
